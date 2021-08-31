@@ -370,10 +370,13 @@ const getContentRepo = async (owner, repoName, token) => {
 }
 
 
-const createRepoAndUploadFilesByUserWithTokenAuth = async (token, name) => {
+const createRepoAndUploadFilesByUserWithTokenAuth = async (token, name, req) => {
     try {
         console.log(token);
-        let data = { "name": name }
+        let data = {
+            "name": name,
+            "description": req.body.description,
+        };
         const request = await fetch(`${process.env.API_URL_GITHUB}/user/repos`, {
             method: 'POST',
             headers: {
@@ -385,7 +388,8 @@ const createRepoAndUploadFilesByUserWithTokenAuth = async (token, name) => {
             body: JSON.stringify(data)
         });
         const resp = await request.json();
-        let a = await createmakerchipJson(token, name);
+        console.log(resp);
+        let a = await createmakerchipJson(token, name, req);
         console.log(a);
         return resp;
     } catch (error) {
@@ -393,19 +397,27 @@ const createRepoAndUploadFilesByUserWithTokenAuth = async (token, name) => {
     }
 }
 
-const createmakerchipJson = async (token, name) => {
+const createmakerchipJson = async (token, name, req) => {
     try {
         console.log(token);
         const [user] = await User.find({ token: token });
         console.log(user);
+
+        const description = req.body.description;
+        const img = req.body.img;
+        const idIde = req.body.id;
+
+        let thumb = await createFileThumb(img, user, name, token);
+        console.log('thumb', thumb);
         let contenido = {
             "demo": {
                 "root": ".",
                 "thumb": "makerchip/thumb.png",
-                "desc": "Backtracking maze solver.",
+                "desc": description,
                 "details": "<b>demo demo1</b>",
                 "docs": "makerchip/README.md",
-                "src": "src/frog_viz.tlv"
+                "src": "src/frog_viz.tlv",
+                "editorID": idIde,
             },
             "implementations": {}
         };
@@ -438,6 +450,36 @@ const createmakerchipJson = async (token, name) => {
     }
 
 }
+
+const createFileThumb = async (img, user, name, token) => {
+    try {
+        let content = img;
+        let message = 'Crear thumb file';
+        let path = 'thumb.png';
+        let repo = name;
+        let owner = user.userName;
+        let body = {
+            message,
+            path,
+            repo,
+            owner,
+            content
+        };
+
+        const request = await fetch(`${process.env.API_URL_GITHUB}/repos/${owner}/${name}/contents/makerchip/${path}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': `application/vnd.github.v3+json`,
+            },
+            body: JSON.stringify(body)
+        });
+        return await request.json();
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+
 
 const detailRepo = async (id, token) => {
 

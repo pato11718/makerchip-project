@@ -42,7 +42,8 @@ const createRepositoryGithubAndUploadFiles = async (req, res) => {
     try {
         const access_token = req.headers.authorization.split(' ')[1];
         const name_repo = req.body.name_repo;
-        const repos = await serviceGithub.createRepoAndUploadFilesByUserWithTokenAuth(access_token, name_repo);
+        
+        const repos = await serviceGithub.createRepoAndUploadFilesByUserWithTokenAuth(access_token, name_repo, req);
         if (repos) {
             res.status(200).send({
                 error: false,
